@@ -1,16 +1,12 @@
 import questionary
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 from datetime import datetime, timedelta
+from database.utils import load_all_transactions, EXPENSE_CATEGORIES, INCOME_CATEGORIES, TRANSACTIONS_FILE
 
 # Initialize Rich Console
 console = Console()
-
-# Transaction categories
-EXPENSE_CATEGORIES = ["Food", "Transport", "Shopping", "Bills", "Entertainment", "Health", "Other"]
-INCOME_CATEGORIES = ["Salary", "Freelance", "Business", "Investment", "Gift", "Other"]
-
-TRANSACTIONS_FILE = "database/transactions.txt"
 
 def add_expense():
     """Adds a new expense transaction."""
@@ -49,7 +45,7 @@ def add_expense():
             return
 
     # Save the transaction
-    with open("database/transactions.txt", "a") as f:
+    with open(TRANSACTIONS_FILE, "a") as f:
         f.write(f"{timestamp},expense,{category},{description},{amount}\n")
 
     console.print("[green]Expense added successfully![/green]")
@@ -88,44 +84,18 @@ def add_income():
             console.print("[red]Invalid date format. Please use YYYY-MM-DD.[/red]")
             return
 
-    with open("database/transactions.txt", "a") as f:
+    with open(TRANSACTIONS_FILE, "a") as f:
         f.write(f"{timestamp},income,{category},{description},{amount}\n")
 
     console.print("[green]Income added successfully![/green]")
-
-def _load_all_transactions():
-    """Loads all transactions from the transactions file."""
-    transactions = []
-    try:
-        with open(TRANSACTIONS_FILE, "r") as f:
-            for line in f:
-                parts = line.strip().split(',')
-                if len(parts) == 5:
-                    try:
-                        timestamp, trans_type, category, description, amount_paisa_str = parts
-                        transactions.append({
-                            "timestamp": float(timestamp),
-                            "type": trans_type,
-                            "category": category,
-                            "description": description,
-                            "amount_paisa": int(amount_paisa_str)
-                        })
-                    except ValueError as e:
-                        console.print(f"[red]Skipping malformed transaction line: {line.strip()} - {e}[/red]")
-                else:
-                    console.print(f"[red]Skipping malformed transaction line (incorrect number of parts): {line.strip()}[/red]")
-    except FileNotFoundError:
-        console.print("[yellow]No transactions recorded yet.[/yellow]")
-    except Exception as e:
-        console.print(f"[red]Error loading transactions: {e}[/red]")
-    return transactions
 
 def list_transactions():
     """Lists all transactions, with optional filters."""
     console.print(Text("\n--- Your Transactions ---", style="bold blue"))
 
-    transactions = _load_all_transactions()
+    transactions = load_all_transactions()
     if not transactions:
+        console.print("[yellow]No transactions recorded yet.[/yellow]")
         return
 
     # Sort by date, newest first
@@ -195,7 +165,7 @@ def view_balance():
     """
     console.print(Text("\n--- Current Month's Balance ---", style="bold green"))
 
-    transactions = _load_all_transactions()
+    transactions = load_all_transactions()
     if not transactions:
         console.print("[yellow]No transactions recorded yet.[/yellow]")
         return

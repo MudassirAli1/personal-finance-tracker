@@ -4,38 +4,15 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 from rich.progress import ProgressBar
+from database.utils import (
+    load_all_transactions,
+    load_budgets,
+    EXPENSE_CATEGORIES,
+    BUDGETS_FILE
+)
 
 # Initialize Rich console
 console = Console()
-
-# Define categories (from project overview)
-EXPENSE_CATEGORIES = [
-    "Food", "Transport", "Shopping", "Bills", "Entertainment", "Health", "Other"
-]
-TRANSACTIONS_FILE = "database/transactions.txt"
-BUDGETS_FILE = "database/budgets.txt"
-
-def _load_budgets():
-    """
-    Loads budgets from budgets.txt for the current month.
-    Returns a dictionary: {category: amount_paisa}
-    """
-    budgets = {}
-    current_month_year = datetime.now().strftime("%Y-%m")
-    try:
-        with open(BUDGETS_FILE, "r") as f:
-            for line in f:
-                parts = line.strip().split(',')
-                if len(parts) == 3:
-                    month_year, category, amount_paisa = parts
-                    if month_year == current_month_year:
-                        budgets[category] = int(amount_paisa)
-        return budgets
-    except FileNotFoundError:
-        return {}
-    except Exception as e:
-        console.print(Text(f"Error loading budgets: {e}", style="red"))
-        return {}
 
 def _get_current_month_expenses():
     """
@@ -44,24 +21,15 @@ def _get_current_month_expenses():
     """
     expenses = {cat: 0 for cat in EXPENSE_CATEGORIES}
     current_month_year = datetime.now().strftime("%Y-%m")
-    try:
-        with open(TRANSACTIONS_FILE, "r") as f:
-            for line in f:
-                parts = line.strip().split(',')
-                # timestamp,type,category,amount_paisa,description
-                if len(parts) >= 5: # Ensure enough parts
-                    timestamp_str, trans_type, category, amount_paisa_str, _ = parts[0], parts[1], parts[2], parts[3], parts[4:]
-                    transaction_date = datetime.fromtimestamp(float(timestamp_str))
-                    
-                    if transaction_date.strftime("%Y-%m") == current_month_year and trans_type.upper() == "EXPENSE":
-                        if category in expenses: # Only track predefined expense categories
-                            expenses[category] += int(amount_paisa_str)
-        return expenses
-    except FileNotFoundError:
-        return {}
-    except Exception as e:
-        console.print(Text(f"Error loading transactions: {e}", style="red"))
-        return {}
+    
+    all_transactions = load_all_transactions()
+
+    for t in all_transactions:
+        transaction_date = datetime.fromtimestamp(t['timestamp'])
+        if transaction_date.strftime("%Y-%m") == current_month_year and t['type'].lower() == "expense":
+            if t['category'] in expenses:
+                expenses[t['category']] += t['amount_paisa']
+    return expenses
 
 
 def set_budget():
@@ -136,7 +104,7 @@ def view_budgets():
     """
     console.print(Text("\n--- Monthly Budget Overview ---", style="bold blue"))
 
-    current_month_budgets = _load_budgets()
+    current_month_budgets = load_budgets()
     current_month_expenses = _get_current_month_expenses()
     current_month_year = datetime.now().strftime("%B %Y")
 
