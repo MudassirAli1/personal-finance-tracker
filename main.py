@@ -5,7 +5,9 @@ from rich.text import Text
 
 from features.transactions.transactions import add_expense, add_income, list_transactions, view_balance
 from features.budgets.budgets import set_budget, view_budgets
-# from features.analytics.analytics import generate_financial_report # Placeholder for future
+from features.analytics.analytics import show_analytics_menu
+from features.smart_assistance.assistance import daily_financial_check
+from features.data_management.cli import show_data_management_menu
 
 console = Console()
 
@@ -32,7 +34,9 @@ def main():
                 "View Current Balance",
                 "Set Budget",
                 "View Budgets",
-                # "Generate Financial Report", # Placeholder for future
+                "Financial Analytics",
+                "Smart Financial Assistant",
+                "Data Management",
                 "Exit"
             ]
         ).ask()
@@ -49,8 +53,12 @@ def main():
             set_budget()
         elif choice == "View Budgets":
             view_budgets()
-        # elif choice == "Generate Financial Report": # Placeholder for future
-        #     console.print(Text("Financial report generation coming soon!", style="yellow"))
+        elif choice == "Financial Analytics":
+            show_analytics_menu()
+        elif choice == "Smart Financial Assistant":
+            daily_financial_check()
+        elif choice == "Data Management":
+            show_data_management_menu()
         elif choice == "Exit":
             console.print(Text("Thank you for using the Personal Finance Tracker. Goodbye!", style="bold blue"))
             break

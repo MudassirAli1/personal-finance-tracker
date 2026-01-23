@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from database.utils import load_all_transactions, EXPENSE_CATEGORIES, INCOME_CATEGORIES
+from database.utils import load_all_transactions, load_budgets, EXPENSE_CATEGORIES, INCOME_CATEGORIES
 
 console = Console()
 
@@ -161,7 +161,116 @@ def savings_analysis():
     console.print(f"Monthly Savings: [{savings_style}]{monthly_savings / 100:.2f} Rs[/{savings_style}]")
     console.print(f"Savings Rate: [{savings_style}]{savings_rate:.2f}%[/{savings_style}]")
 
-if __name__ == '__main__':
+def financial_health_score():
+    """
+    Calculates and displays a financial health score.
+    """
+    console.print(Text("\n--- Financial Health Score ---", style="bold magenta"))
+
+    transactions = load_all_transactions()
+    budgets = load_budgets()
+
+    current_month_year = datetime.now().strftime("%Y-%m")
+    
+    total_income = 0
+    total_expense = 0
+
+    for t in transactions:
+        if datetime.fromtimestamp(t['timestamp']).strftime('%Y-%m') == current_month_year:
+            if t['type'].lower() == 'income':
+                total_income += t['amount_paisa']
+            elif t['type'].lower() == 'expense':
+                total_expense += t['amount_paisa']
+
+    # 1. Savings Rate Score (30 points)
+    savings_rate = ((total_income - total_expense) / total_income) * 100 if total_income > 0 else 0
+    if savings_rate > 20:
+        savings_score = 30
+    elif savings_rate > 10:
+        savings_score = 20
+    elif savings_rate > 0:
+        savings_score = 10
+    else:
+        savings_score = 0
+
+    # 2. Budget Adherence Score (25 points)
+    total_budget = sum(budgets.values())
+    budget_adherence_score = 0
+    if total_budget > 0:
+        utilization = (total_expense / total_budget) * 100
+        if utilization < 90:
+            budget_adherence_score = 25
+        elif utilization <= 100:
+            budget_adherence_score = 15
+        else:
+            budget_adherence_score = 0
+    
+    # 3. Income vs Expenses Score (25 points)
+    income_vs_expenses_score = 25 if total_income > total_expense else 0
+
+    # 4. Debt Management Score (20 points) - Assumed no debt for now
+    debt_management_score = 20
+
+    total_score = savings_score + budget_adherence_score + income_vs_expenses_score + debt_management_score
+
+    score_color = "red"
+    interpretation = "Needs Improvement"
+    if total_score > 80:
+        score_color = "green"
+        interpretation = "Excellent"
+    elif total_score > 60:
+        score_color = "yellow"
+        interpretation = "Good"
+
+    console.print(f"Overall Score: [{score_color}]{total_score}/100 ({interpretation})[/{score_color}]")
+
+    # Score breakdown
+    console.print("\n--- Score Breakdown ---")
+    console.print(f"Savings Rate: {savings_score}/30")
+    console.print(f"Budget Adherence: {budget_adherence_score}/25")
+    console.print(f"Income vs Expenses: {income_vs_expenses_score}/25")
+    console.print(f"Debt Management: {debt_management_score}/20")
+
+def generate_comprehensive_report():
+    """
+    Generates a comprehensive financial report for the current month.
+    """
+    console.print(Text("\n--- Comprehensive Financial Report ---", style="bold magenta"))
     spending_analysis()
     income_analysis()
     savings_analysis()
+    financial_health_score()
+
+def show_analytics_menu():
+    """
+    Displays a menu for the user to choose an analytics report.
+    """
+    console.print(Text("\n--- Financial Analytics ---", style="bold green"))
+    
+    choice = questionary.select(
+        "Choose an analytics report:",
+        choices=[
+            "Spending Analysis",
+            "Income Analysis",
+            "Savings Analysis",
+            "Financial Health Score",
+            "Comprehensive Report",
+            "Exit"
+        ]
+    ).ask()
+
+    if choice == "Spending Analysis":
+        spending_analysis()
+    elif choice == "Income Analysis":
+        income_analysis()
+    elif choice == "Savings Analysis":
+        savings_analysis()
+    elif choice == "Financial Health Score":
+        financial_health_score()
+    elif choice == "Comprehensive Report":
+        generate_comprehensive_report()
+    elif choice == "Exit":
+        return
+
+if __name__ == '__main__':
+    show_analytics_menu()
