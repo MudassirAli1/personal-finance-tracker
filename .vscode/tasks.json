@@ -5,6 +5,11 @@
 			"label": "Run main.py",
 			"type": "shell",
 			"command": "python main.py"
+		},
+		{
+			"label": "Run main.py",
+			"type": "shell",
+			"command": "F:/personal-finanice-tracker/.venv/Scripts/python.exe main.py"
 		}
 	]
 }

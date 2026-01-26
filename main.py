@@ -1,4 +1,6 @@
 import questionary
+import subprocess
+import sys
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -21,6 +23,16 @@ def display_main_menu():
         )
     )
 
+def launch_dashboard():
+    """Launches the Streamlit web dashboard."""
+    console.print("Launching the web dashboard...")
+    try:
+        subprocess.run([sys.executable, "-m", "streamlit", "run", "features/dashboard/dashboard.py"])
+    except FileNotFoundError:
+        console.print("[red]Error: 'streamlit' command not found. Please make sure Streamlit is installed.[/red]")
+    except Exception as e:
+        console.print(f"[red]An error occurred: {e}[/red]")
+
 def main():
     display_main_menu()
 
@@ -37,6 +49,7 @@ def main():
                 "Financial Analytics",
                 "Smart Financial Assistant",
                 "Data Management",
+                "Web Dashboard",
                 "Exit"
             ]
         ).ask()
@@ -59,6 +72,8 @@ def main():
             daily_financial_check()
         elif choice == "Data Management":
             show_data_management_menu()
+        elif choice == "Web Dashboard":
+            launch_dashboard()
         elif choice == "Exit":
             console.print(Text("Thank you for using the Personal Finance Tracker. Goodbye!", style="bold blue"))
             break
